@@ -60,15 +60,13 @@ private const val SHADOW_RADIUS = 6f
  */
 class MyWatchFace : CanvasWatchFaceService() {
 
-  override fun onCreateEngine(): Engine {
-    return Engine()
-  }
+  override fun onCreateEngine(): Engine = Engine()
 
-  private class EngineHandler(reference: MyWatchFace.Engine) : Handler() {
-    private val mWeakReference: WeakReference<MyWatchFace.Engine> = WeakReference(reference)
+  private class EngineHandler(reference: Engine) : Handler() {
+    private val engineRef: WeakReference<Engine> = WeakReference(reference)
 
     override fun handleMessage(msg: Message) {
-      val engine = mWeakReference.get()
+      val engine = engineRef.get()
       if (engine != null) {
         when (msg.what) {
           MSG_UPDATE_TIME -> engine.handleUpdateTimeMessage()
@@ -204,12 +202,8 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     override fun onPropertiesChanged(properties: Bundle) {
       super.onPropertiesChanged(properties)
-      lowBitAmbient = properties.getBoolean(
-          WatchFaceService.PROPERTY_LOW_BIT_AMBIENT, false
-      )
-      burnInProtection = properties.getBoolean(
-          WatchFaceService.PROPERTY_BURN_IN_PROTECTION, false
-      )
+      lowBitAmbient = properties.getBoolean(WatchFaceService.PROPERTY_LOW_BIT_AMBIENT, false)
+      burnInProtection = properties.getBoolean(WatchFaceService.PROPERTY_BURN_IN_PROTECTION, false)
     }
 
     override fun onTimeTick() {
@@ -255,18 +249,10 @@ class MyWatchFace : CanvasWatchFaceService() {
         secondPaint.isAntiAlias = true
         tickAndCirclePaint.isAntiAlias = true
 
-        hourPaint.setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
-        minutePaint.setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
-        secondPaint.setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
-        tickAndCirclePaint.setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        hourPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        minutePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        secondPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        tickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
     }
 
