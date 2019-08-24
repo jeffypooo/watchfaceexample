@@ -4,27 +4,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
-import android.graphics.Rect
+import android.graphics.*
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import androidx.palette.graphics.Palette
 import android.support.wearable.watchface.CanvasWatchFaceService
 import android.support.wearable.watchface.WatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.view.SurfaceHolder
 import android.widget.Toast
-
+import androidx.palette.graphics.Palette
+import com.masterjefferson.wfexample.ui.color.ColorResources
 import java.lang.ref.WeakReference
-import java.util.Calendar
-import java.util.TimeZone
+import java.util.*
 
 /**
  * Updates rate in milliseconds for interactive mode. We update once a second to advance the
@@ -118,7 +110,8 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     override fun onCreate(holder: SurfaceHolder) {
       super.onCreate(holder)
-
+      /* load color resources */
+      ColorResources.load(applicationContext)
       setWatchFaceStyle(
           WatchFaceStyle.Builder(this@MyWatchFace)
               .setAcceptsTapEvents(true)
@@ -140,8 +133,8 @@ class MyWatchFace : CanvasWatchFaceService() {
       /* Extracts colors from background image to improve watchface style. */
       Palette.from(backgroundBitmap).generate {
         it?.let {
-          watchHandHighlightColor = it.getVibrantColor(Color.RED)
-          watchHandColor = it.getLightVibrantColor(Color.WHITE)
+          watchHandHighlightColor = it.getVibrantColor(ColorResources.primary.color)
+          watchHandColor = it.getLightVibrantColor(ColorResources.surface.color)
           watchHandShadowColor = it.getDarkMutedColor(Color.BLACK)
           updateWatchHandStyle()
         }
@@ -150,9 +143,10 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     private fun initializeWatchFace() {
       /* Set defaults for colors */
-      watchHandColor = Color.WHITE
-      watchHandHighlightColor = Color.RED
+      watchHandColor = ColorResources.surface.color
+      watchHandHighlightColor = ColorResources.primary.color
       watchHandShadowColor = Color.BLACK
+
 
       hourPaint = Paint().apply {
         color = watchHandColor
