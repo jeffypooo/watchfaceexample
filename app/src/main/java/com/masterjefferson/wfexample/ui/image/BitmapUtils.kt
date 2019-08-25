@@ -1,4 +1,4 @@
-package com.masterjefferson.wfexample
+package com.masterjefferson.wfexample.ui.image
 
 import android.graphics.*
 
@@ -21,7 +21,8 @@ object BitmapUtils {
 
 }
 
-internal fun Bitmap.copyGrayScale(): Bitmap = BitmapUtils.createGrayScale(this)
+internal fun Bitmap.copyGrayScale(): Bitmap =
+  BitmapUtils.createGrayScale(this)
 
 internal fun Bitmap.copyScaled(scaleX: Float, scaleY: Float = scaleX): Bitmap = Bitmap.createScaledBitmap(
   this,

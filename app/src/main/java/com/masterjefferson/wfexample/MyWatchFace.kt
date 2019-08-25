@@ -14,7 +14,9 @@ import android.support.wearable.watchface.WatchFaceStyle
 import android.view.SurfaceHolder
 import android.widget.Toast
 import androidx.palette.graphics.Palette
-import com.masterjefferson.wfexample.ui.color.ColorResources
+import com.masterjefferson.wfexample.ui.image.copyGrayScale
+import com.masterjefferson.wfexample.ui.image.copyScaled
+import com.masterjefferson.wfexample.ui.resources.ColorResources
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -318,7 +320,6 @@ class MyWatchFace : CanvasWatchFaceService() {
     override fun onDraw(canvas: Canvas, bounds: Rect) {
       val now = System.currentTimeMillis()
       calendar.timeInMillis = now
-
       drawBackground(canvas)
       drawWatchFace(canvas)
     }

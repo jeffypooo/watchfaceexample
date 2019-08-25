@@ -1,4 +1,4 @@
-package com.masterjefferson.wfexample.ui.color
+package com.masterjefferson.wfexample.ui.resources
 
 import android.content.Context
 import androidx.annotation.ColorInt
