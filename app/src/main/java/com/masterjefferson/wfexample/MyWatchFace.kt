@@ -153,9 +153,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = HOUR_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       minutePaint = Paint().apply {
@@ -163,9 +161,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = MINUTE_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       secondPaint = Paint().apply {
@@ -173,9 +169,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = SECOND_TICK_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       tickAndCirclePaint = Paint().apply {
@@ -183,9 +177,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = SECOND_TICK_STROKE_WIDTH
         isAntiAlias = true
         style = Paint.Style.STROKE
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
     }
 
@@ -268,58 +260,39 @@ class MyWatchFace : CanvasWatchFaceService() {
       super.onSurfaceChanged(holder, format, width, height)
 
       /*
-             * Find the coordinates of the center point on the screen, and ignore the window
-             * insets, so that, on round watches with a "chin", the watch face is centered on the
-             * entire screen, not just the usable portion.
-             */
+       * Find the coordinates of the center point on the screen, and ignore the window
+       * insets, so that, on round watches with a "chin", the watch face is centered on the
+       * entire screen, not just the usable portion.
+       */
       centerX = width / 2f
       centerY = height / 2f
 
       /*
-             * Calculate lengths of different hands based on watch screen size.
-             */
+       * Calculate lengths of different hands based on watch screen size.
+       */
       secondHandLength = (centerX * 0.875).toFloat()
       minuteHandLength = (centerX * 0.75).toFloat()
       hourHandLength = (centerX * 0.5).toFloat()
 
       /* Scale loaded background image (more efficient) if surface dimensions change. */
       val scale = width.toFloat() / backgroundBitmap.width.toFloat()
-
-      backgroundBitmap = Bitmap.createScaledBitmap(
-          backgroundBitmap,
-          (backgroundBitmap.width * scale).toInt(),
-          (backgroundBitmap.height * scale).toInt(), true
-      )
+      backgroundBitmap = backgroundBitmap.copyScaled(scale)
 
       /*
-             * Create a gray version of the image only if it will look nice on the device in
-             * ambient mode. That means we don't want devices that support burn-in
-             * protection (slight movements in pixels, not great for images going all the way to
-             * edges) and low ambient mode (degrades image quality).
-             *
-             * Also, if your watch face will know about all images ahead of time (users aren't
-             * selecting their own photos for the watch face), it will be more
-             * efficient to create a black/white version (png, etc.) and load that when you need it.
-             */
+       * Create a gray version of the image only if it will look nice on the device in
+       * ambient mode. That means we don't want devices that support burn-in
+       * protection (slight movements in pixels, not great for images going all the way to
+       * edges) and low ambient mode (degrades image quality).
+       *
+       * Also, if your watch face will know about all images ahead of time (users aren't
+       * selecting their own photos for the watch face), it will be more
+       * efficient to create a black/white version (png, etc.) and load that when you need it.
+       */
       if (!burnInProtection && !lowBitAmbient) {
-        initGrayBackgroundBitmap()
+        grayBackgroundBitmap = backgroundBitmap.copyGrayScale()
       }
     }
 
-    private fun initGrayBackgroundBitmap() {
-      grayBackgroundBitmap = Bitmap.createBitmap(
-          backgroundBitmap.width,
-          backgroundBitmap.height,
-          Bitmap.Config.ARGB_8888
-      )
-      val canvas = Canvas(grayBackgroundBitmap)
-      val grayPaint = Paint()
-      val colorMatrix = ColorMatrix()
-      colorMatrix.setSaturation(0f)
-      val filter = ColorMatrixColorFilter(colorMatrix)
-      grayPaint.colorFilter = filter
-      canvas.drawBitmap(backgroundBitmap, 0f, 0f, grayPaint)
-    }
 
     /**
      * Captures tap event (and tap type). The [WatchFaceService.TAP_TYPE_TAP] case can be
