@@ -11,6 +11,7 @@ import android.os.Message
 import android.support.wearable.watchface.CanvasWatchFaceService
 import android.support.wearable.watchface.WatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
+import android.util.TypedValue
 import android.view.SurfaceHolder
 import android.widget.Toast
 import androidx.palette.graphics.Palette
@@ -83,10 +84,12 @@ class MyWatchFace : CanvasWatchFaceService() {
     private var hourHandLength: Float = 0F
 
     /* Colors for all hands (hour, minute, seconds, ticks) based on photo loaded. */
+    private var digitsColor: Int = 0
     private var watchHandColor: Int = 0
     private var watchHandHighlightColor: Int = 0
     private var watchHandShadowColor: Int = 0
 
+    private lateinit var digitPaint: Paint
     private lateinit var hourPaint: Paint
     private lateinit var minutePaint: Paint
     private lateinit var secondPaint: Paint
@@ -135,6 +138,7 @@ class MyWatchFace : CanvasWatchFaceService() {
       /* Extracts colors from background image to improve watchface style. */
       Palette.from(backgroundBitmap).generate {
         it?.let {
+          digitsColor = it.getLightVibrantColor(ColorResources.primary.color)
           watchHandHighlightColor = it.getVibrantColor(ColorResources.primary.color)
           watchHandColor = it.getLightVibrantColor(ColorResources.surface.color)
           watchHandShadowColor = it.getDarkMutedColor(Color.BLACK)
@@ -145,11 +149,18 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     private fun initializeWatchFace() {
       /* Set defaults for colors */
+      digitsColor = ColorResources.primary.color
       watchHandColor = ColorResources.surface.color
       watchHandHighlightColor = ColorResources.primary.color
       watchHandShadowColor = Color.BLACK
 
-
+      digitPaint = Paint().apply {
+        color = digitsColor
+        typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 26f, resources.displayMetrics)
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+      }
       hourPaint = Paint().apply {
         color = watchHandColor
         strokeWidth = HOUR_STROKE_WIDTH
@@ -183,6 +194,44 @@ class MyWatchFace : CanvasWatchFaceService() {
       }
     }
 
+    private fun applyWhitePaintColors() {
+      digitPaint.color = Color.WHITE
+      hourPaint.color = Color.WHITE
+      minutePaint.color = Color.WHITE
+      secondPaint.color = Color.WHITE
+      tickAndCirclePaint.color = Color.WHITE
+    }
+
+    private fun applyCachedPaintColors() {
+      digitPaint.color = digitsColor
+      hourPaint.color = watchHandColor
+      minutePaint.color = watchHandColor
+      secondPaint.color = watchHandHighlightColor
+      tickAndCirclePaint.color = watchHandColor
+    }
+
+    private fun enableAntiAliasing(enable: Boolean) {
+      digitPaint.isAntiAlias = enable
+      hourPaint.isAntiAlias = enable
+      minutePaint.isAntiAlias = enable
+      secondPaint.isAntiAlias = enable
+      tickAndCirclePaint.isAntiAlias = enable
+    }
+
+    private fun enableShadows(enable: Boolean) {
+      if (!enable) {
+        hourPaint.clearShadowLayer()
+        minutePaint.clearShadowLayer()
+        secondPaint.clearShadowLayer()
+        tickAndCirclePaint.clearShadowLayer()
+      } else {
+        hourPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        minutePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        secondPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        tickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+      }
+    }
+
     override fun onDestroy() {
       updateTimeHandler.removeMessages(MSG_UPDATE_TIME)
       super.onDestroy()
@@ -212,35 +261,13 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     private fun updateWatchHandStyle() {
       if (ambient) {
-        hourPaint.color = Color.WHITE
-        minutePaint.color = Color.WHITE
-        secondPaint.color = Color.WHITE
-        tickAndCirclePaint.color = Color.WHITE
-
-        hourPaint.isAntiAlias = false
-        minutePaint.isAntiAlias = false
-        secondPaint.isAntiAlias = false
-        tickAndCirclePaint.isAntiAlias = false
-
-        hourPaint.clearShadowLayer()
-        minutePaint.clearShadowLayer()
-        secondPaint.clearShadowLayer()
-        tickAndCirclePaint.clearShadowLayer()
+        applyWhitePaintColors()
+        enableAntiAliasing(false)
+        enableShadows(false)
       } else {
-        hourPaint.color = watchHandColor
-        minutePaint.color = watchHandColor
-        secondPaint.color = watchHandHighlightColor
-        tickAndCirclePaint.color = watchHandColor
-
-        hourPaint.isAntiAlias = true
-        minutePaint.isAntiAlias = true
-        secondPaint.isAntiAlias = true
-        tickAndCirclePaint.isAntiAlias = true
-
-        hourPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
-        minutePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
-        secondPaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
-        tickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
+        applyCachedPaintColors()
+        enableAntiAliasing(true)
+        enableShadows(true)
       }
     }
 
@@ -335,7 +362,12 @@ class MyWatchFace : CanvasWatchFaceService() {
       }
     }
 
+    private val digitalClockText: String
+      get() = "%02d:%02d".format(calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE))
+
     private fun drawWatchFace(canvas: Canvas) {
+      /* draw the digital clock */
+      canvas.drawText(digitalClockText, centerX, centerY / 2f, digitPaint)
 
       /*
              * Draw ticks. Usually you will want to bake this directly into the photo, but in
@@ -412,6 +444,7 @@ class MyWatchFace : CanvasWatchFaceService() {
           CENTER_GAP_AND_CIRCLE_RADIUS,
           tickAndCirclePaint
       )
+
 
       /* Restore the canvas' original orientation. */
       canvas.restore()
