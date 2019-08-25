@@ -4,27 +4,21 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
-import android.graphics.Rect
+import android.graphics.*
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import androidx.palette.graphics.Palette
 import android.support.wearable.watchface.CanvasWatchFaceService
 import android.support.wearable.watchface.WatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.view.SurfaceHolder
 import android.widget.Toast
-
+import androidx.palette.graphics.Palette
+import com.masterjefferson.wfexample.ui.image.copyGrayScale
+import com.masterjefferson.wfexample.ui.image.copyScaled
+import com.masterjefferson.wfexample.ui.resources.ColorResources
 import java.lang.ref.WeakReference
-import java.util.Calendar
-import java.util.TimeZone
+import java.util.*
 
 /**
  * Updates rate in milliseconds for interactive mode. We update once a second to advance the
@@ -118,7 +112,8 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     override fun onCreate(holder: SurfaceHolder) {
       super.onCreate(holder)
-
+      /* load color resources */
+      ColorResources.load(applicationContext)
       setWatchFaceStyle(
           WatchFaceStyle.Builder(this@MyWatchFace)
               .setAcceptsTapEvents(true)
@@ -140,8 +135,8 @@ class MyWatchFace : CanvasWatchFaceService() {
       /* Extracts colors from background image to improve watchface style. */
       Palette.from(backgroundBitmap).generate {
         it?.let {
-          watchHandHighlightColor = it.getVibrantColor(Color.RED)
-          watchHandColor = it.getLightVibrantColor(Color.WHITE)
+          watchHandHighlightColor = it.getVibrantColor(ColorResources.primary.color)
+          watchHandColor = it.getLightVibrantColor(ColorResources.surface.color)
           watchHandShadowColor = it.getDarkMutedColor(Color.BLACK)
           updateWatchHandStyle()
         }
@@ -150,18 +145,17 @@ class MyWatchFace : CanvasWatchFaceService() {
 
     private fun initializeWatchFace() {
       /* Set defaults for colors */
-      watchHandColor = Color.WHITE
-      watchHandHighlightColor = Color.RED
+      watchHandColor = ColorResources.surface.color
+      watchHandHighlightColor = ColorResources.primary.color
       watchHandShadowColor = Color.BLACK
+
 
       hourPaint = Paint().apply {
         color = watchHandColor
         strokeWidth = HOUR_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       minutePaint = Paint().apply {
@@ -169,9 +163,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = MINUTE_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       secondPaint = Paint().apply {
@@ -179,9 +171,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = SECOND_TICK_STROKE_WIDTH
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
 
       tickAndCirclePaint = Paint().apply {
@@ -189,9 +179,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         strokeWidth = SECOND_TICK_STROKE_WIDTH
         isAntiAlias = true
         style = Paint.Style.STROKE
-        setShadowLayer(
-            SHADOW_RADIUS, 0f, 0f, watchHandShadowColor
-        )
+        setShadowLayer(SHADOW_RADIUS, 0f, 0f, watchHandShadowColor)
       }
     }
 
@@ -274,58 +262,39 @@ class MyWatchFace : CanvasWatchFaceService() {
       super.onSurfaceChanged(holder, format, width, height)
 
       /*
-             * Find the coordinates of the center point on the screen, and ignore the window
-             * insets, so that, on round watches with a "chin", the watch face is centered on the
-             * entire screen, not just the usable portion.
-             */
+       * Find the coordinates of the center point on the screen, and ignore the window
+       * insets, so that, on round watches with a "chin", the watch face is centered on the
+       * entire screen, not just the usable portion.
+       */
       centerX = width / 2f
       centerY = height / 2f
 
       /*
-             * Calculate lengths of different hands based on watch screen size.
-             */
+       * Calculate lengths of different hands based on watch screen size.
+       */
       secondHandLength = (centerX * 0.875).toFloat()
       minuteHandLength = (centerX * 0.75).toFloat()
       hourHandLength = (centerX * 0.5).toFloat()
 
       /* Scale loaded background image (more efficient) if surface dimensions change. */
       val scale = width.toFloat() / backgroundBitmap.width.toFloat()
-
-      backgroundBitmap = Bitmap.createScaledBitmap(
-          backgroundBitmap,
-          (backgroundBitmap.width * scale).toInt(),
-          (backgroundBitmap.height * scale).toInt(), true
-      )
+      backgroundBitmap = backgroundBitmap.copyScaled(scale)
 
       /*
-             * Create a gray version of the image only if it will look nice on the device in
-             * ambient mode. That means we don't want devices that support burn-in
-             * protection (slight movements in pixels, not great for images going all the way to
-             * edges) and low ambient mode (degrades image quality).
-             *
-             * Also, if your watch face will know about all images ahead of time (users aren't
-             * selecting their own photos for the watch face), it will be more
-             * efficient to create a black/white version (png, etc.) and load that when you need it.
-             */
+       * Create a gray version of the image only if it will look nice on the device in
+       * ambient mode. That means we don't want devices that support burn-in
+       * protection (slight movements in pixels, not great for images going all the way to
+       * edges) and low ambient mode (degrades image quality).
+       *
+       * Also, if your watch face will know about all images ahead of time (users aren't
+       * selecting their own photos for the watch face), it will be more
+       * efficient to create a black/white version (png, etc.) and load that when you need it.
+       */
       if (!burnInProtection && !lowBitAmbient) {
-        initGrayBackgroundBitmap()
+        grayBackgroundBitmap = backgroundBitmap.copyGrayScale()
       }
     }
 
-    private fun initGrayBackgroundBitmap() {
-      grayBackgroundBitmap = Bitmap.createBitmap(
-          backgroundBitmap.width,
-          backgroundBitmap.height,
-          Bitmap.Config.ARGB_8888
-      )
-      val canvas = Canvas(grayBackgroundBitmap)
-      val grayPaint = Paint()
-      val colorMatrix = ColorMatrix()
-      colorMatrix.setSaturation(0f)
-      val filter = ColorMatrixColorFilter(colorMatrix)
-      grayPaint.colorFilter = filter
-      canvas.drawBitmap(backgroundBitmap, 0f, 0f, grayPaint)
-    }
 
     /**
      * Captures tap event (and tap type). The [WatchFaceService.TAP_TYPE_TAP] case can be
@@ -351,7 +320,6 @@ class MyWatchFace : CanvasWatchFaceService() {
     override fun onDraw(canvas: Canvas, bounds: Rect) {
       val now = System.currentTimeMillis()
       calendar.timeInMillis = now
-
       drawBackground(canvas)
       drawWatchFace(canvas)
     }
